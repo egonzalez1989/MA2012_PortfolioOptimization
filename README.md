@@ -6,10 +6,9 @@ The code for this activity is based on two main data descriptors: Variance and e
 
 ### Variance Minimization and Utility Maximization
 1. **Minimizing Variability (Risk)**: Variability is quantified using the portfolio's variance, calculated as:
-   \[
-   \sigma_p^2 = \mathbf{w}^\top \Sigma \mathbf{w}
-   \]
-   where \(\mathbf{w}\) is the weight vector of asset allocations, and \(\Sigma\) is the covariance matrix of asset returns. Minimizing \(\sigma_p^2\) leads to reduced portfolio risk.
+   $$\sigma_p^2 = \mathbf{w}^\top \Sigma \mathbf{w}$$
+   
+   where $\mathbf{w}$ is the weight vector of asset allocations, and $\Sigma$ is the covariance matrix of asset returns. Minimizing $\sigma_p^2$ leads to reduced portfolio risk.
 
 2. **Maximizing Expected Utility**: Utility functions quantify investor satisfaction. A common approach is to maximize the expected utility of portfolio returns:
    \[
