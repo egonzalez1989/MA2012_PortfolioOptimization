@@ -19,6 +19,6 @@ The code for this activity is based on two main data descriptors: Variance and e
 
 ### Relation to Markowitz Theory
 Markowitz's theory proposes that portfolios should be optimized based on the trade-off between expected return and risk. This leads to the **efficient frontier**, a set of portfolios with the highest return for a given level of risk. The theory underpins the optimization process:
-1. **Input Estimation**: Estimate expected returns $}\mathbb{E}[R]$ and covariance $\Sigma$ of asset returns.
+1. **Input Estimation**: Estimate expected returns $\mathbb{E}[R]$ and covariance $\Sigma$ of asset returns.
 2. **Objective**: Solve for $\mathbf{w}$ to maximize utility while minimizing variance.
 3. **Constraints**: Ensure practical allocations, such as $\sum w_i = 1$ (portfolio weights sum to 1) and $w_i \geq 0$ (no short-selling if restricted).
