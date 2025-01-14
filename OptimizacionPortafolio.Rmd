@@ -1,0 +1,206 @@
+---
+title: "Solución propuesta Actividad 2"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+## Ejercicio 1
+
+**(10 pts) Obtén los valores de cierre (Close) de cada archivo de los días hábiles entre el 1 de enero 2021 y el 31 de diciembre 2022. 
+(Hint: utiliza el operador %in% y las fechas obtenidas del enlace de Apple).**
+
+
+```{r}
+# Extrayendo fechas
+data <- read.csv('https://raw.githubusercontent.com/egonzalez1989/MA2012_PortfolioOptimization/main/data/AAPL.csv')
+dates <- as.Date(data$Date)
+dates <- subset(dates, dates>="2021-01-01" & dates<="2022-12-31")
+# APPL
+aplPrice <- subset(data$Close, as.Date(data$Date) %in% dates)
+# BTC
+data <- read.csv('https://raw.githubusercontent.com/egonzalez1989/MA2012_PortfolioOptimization/main/data/AMZN.csv')
+amzPrice <- subset(data$Close, as.Date(data$Date) %in% dates)
+# BTC
+data <- read.csv('https://raw.githubusercontent.com/egonzalez1989/MA2012_PortfolioOptimization/main/data/BTC.csv')
+btcPrice <- subset(data$Close, as.Date(data$Date) %in% dates)
+#CSCO
+data <- read.csv('https://raw.githubusercontent.com/egonzalez1989/MA2012_PortfolioOptimization/main/data/CSCO.csv')
+cscPrice <- subset(data$Close, as.Date(data$Date) %in% dates)
+# ETH
+data <- read.csv('https://raw.githubusercontent.com/egonzalez1989/MA2012_PortfolioOptimization/main/data/ETH.csv')
+ethPrice <- subset(data$Close, as.Date(data$Date) %in% dates)
+# MSFT
+data <- read.csv('https://raw.githubusercontent.com/egonzalez1989/MA2012_PortfolioOptimization/main/data/MSFT.csv')
+msfPrice <- subset(data$Close, as.Date(data$Date) %in% dates)
+
+# Crearemos una dataframe con los precios de cierre de cada activo
+dfPrices <- data.frame(
+  "AAPL" = aplPrice,
+  "AMZN" = amzPrice,
+  "BTC" = btcPrice,
+  "CSCO" = cscPrice,
+  "ETH" = ethPrice,
+  "MSFT" = msfPrice
+)
+n<-length(aplPrice)
+```
+
+
+**(10 pts) Calcula las tasas de rendimiento diario de cada activo y sus respectivas varianzas. Consideraremos la "varianza del activo X" como la varianza de sus tasas de rendimiento.**
+```{r}
+# Calculo de tasas de rendimiento
+dfReturns <- 100 * (dfPrices[2:n,] - dfPrices[1:n-1,]) / dfPrices[1:n-1,]
+
+# Varianzas de las tasas: se recuperan de la matriz de covarianzas
+dfCovReturns <- cov(dfReturns)
+print(round(dfCovReturns, 2))
+
+```
+
+**(10 pts) Identifica el activo con mayor y menor varianza. Utiliza las propiedades de la esperanza y  varianza para calcular la esperanza y varianza de un portafolio compuesto por los dos de activos con pesos w1=0.6 para el activo con mayor varianza, y w2=0.4 para el activo con menor varianza.**
+
+Se identifica una mayor varianza para ETH: 35.505326	y un menor varianza para para CSCO: 2.449284
+```{r}
+# Pesos 
+w1 <- .6
+w2 <- .4
+
+# Calculamos la esperanza (media) utilizanod los rendimientos promedio de cada activo
+portExp <- w1 * mean(dfReturns$ETH) + w2 * mean(dfReturns$CSCO)
+
+# Calculamos la esperanza (media) utilizanod los rendimientos promedio de cada activo
+etVar <- dfCovReturns["ETH", "ETH"]
+csVar <- dfCovReturns["CSCO", "CSCO"]
+etCsCov <- dfCovReturns["ETH", "CSCO"]
+portVar <- w1^2*etVar + w2^2*csVar + 2*w1*w2*etCsCov
+
+sprintf("Valor esperado para la tasa de rendimiento del portafolio: %s", round(portExp, 2))
+sprintf("Varianza del portafolio (tasas de rendimiento): %s", round(portVar, 2))
+```
+
+
+**(10 pts) La tasa de rendimiento que has calculado corresponde a un calculo diario. Para calcular una tasa de rendimiento anualizada debes multiplicar las tasas por 252. ¿Cuál sería la tasa de rendimiento esperada anualizada de este portafolio?.**
+```{r}
+portAnnExp <- 252 * portExp
+sprintf("La tasa anualizada para el portafolio es : %s", round(portAnnExp, 2))
+```
+
+**(10 pts) Calcula la contribución de cada activo en la varianza total de la cartera y los valores beta1 y beta2**
+
+```{r}
+# Calculamos los retornos diarios del portafolio para calcular la covarianza con cada activo
+portReturns <- w1*dfReturns$ETH + w2*dfReturns$CSCO
+
+contrEt <- w1 * cov(dfReturns$ETH, portReturns)
+contrCs <- w2 * cov(dfReturns$CSCO, portReturns)
+
+# Verificando contribuciones y si es correcto las imprimo
+if(portVar == contrEt + contrCs) {
+  sprintf("Los valores obtenidos para las contribuciones: contr1=%s, contr2=%s", round(contrEt, 2), round(contrCs, 2))
+}
+
+sprintf("El porcentaje de contribución de cada activo a la volatilidad del portafolio es: contr1=%s, contr2=%s", round(100 * contrEt / portVar, 2), round(100 * contrCs / portVar, 2))
+
+# Puede aplicarse la fórmula directamente o utilizarse las contribuciones calculadas
+betaEt <- contrEt / (w1 * portVar)
+betaCs <- contrCs / (w2 * portVar)
+sprintf("Los valores obtenidos para las betas: beta1=%s, beta2=%s", round(betaEt, 2), round(betaCs, 2))
+```
+
+Es posible observar una contribución uy amplia de Ethereum, es decir, gran parte de la varianza o volatilidad (un 94.05) es introducida por el monto empleado de Ethereum. En relación a los betas (1.57 y .15) también se observa un cambio significativo, obtneniendo un valor más grande para ETH.
+
+
+
+## Ejercicio 2
+
+**(10 pts) Utilizando la pareja del ejercicio anterior, utiliza los pesos para calcular las esperanzas y varianzas de las carteras con los pesos mencionados.**
+```{r}
+# Se utilizan diversos pesos para examinar los cambios en el portafolio 
+w1 <- seq(0, 1, .1)
+w2 <- 1-w1
+
+# Utilizamos los valores esperados de las tasas de rendimiento anualizadas de cada activo
+etExp <- mean(dfReturns$ETH) * 252
+csExp <- mean(dfReturns$CSCO) * 252
+
+dfWtPorts <- data.frame(
+  "W1" = w1,
+  "Exp.Returns" = w1*etExp + w2*csExp,
+  "Port.Var" = w1^2*etVar + w2^2*csVar + 2*w1*w2*etCsCov
+)
+
+print(dfWtPorts)
+
+
+plot(dfWtPorts$W1, dfWtPorts$Exp.Returns, type="l", col=2, xlab="Pesos w1", ylab=" ", ylim = c(0, 55))
+lines(dfWtPorts$W1, dfWtPorts$Port.Var, type="l", col=3)
+points(c(.02, 1), c(2.44, 52.5), type = "p")
+legend("topleft", c("Rendimiento esperado", "Varianza"), lty = 2, col = c(2, 3))
+
+```
+
+
+
+
+
+
+**(10 pts) Encuentra el valor de w1 que minimizan la varianza del cartera.**
+
+Con esta serie de valores, la mínima varianza se alcanza con w1=0, es decir, emplear la inversión total en activos de CSCO.
+
+Empleando una serie más fina, se puede observar que el mínimo se aproxima a w1=.02 (en este ejercicio esto no era necesario).
+```{r}
+# Es posible concontrar un valor más preciso utilizando una partición más fina para w1, o con el método de optimización visto en clase
+# Por ahora sabemos que el valor que mínimiza estpa entre 0 y .1
+w1 <- seq(0, .1, .01)
+w2 <- 1-w1
+cbind(w1, w1^2*etVar + w2^2*csVar + 2*w1*w2*etCsCov)
+```
+
+**(10 pts) Verifica, utilizando lo obtenido en el inciso 1, cuales serían los pesos
+para los cuales se obtiene una esperanza de la tasa de rendimiento anualizada de al menos 15% y determina la desviación estándar de la cartera.**
+
+Es posible observar con una simple inspección visual, que se obtiene un 16.42% de rendimiento anualizado con el peso w1=.2. 
+
+Podemos conseguir un valor más preciso si realizamos una partición fina entre .1 y .2 (o un valor exacto utilizando la ecuación de la recta). Para un precisión a dos decimales, obtenemos w1=0.18, es decir, empleando el 18% de una inversión para ETH es posible obtener una tasa esperada anual del 15%.
+```{r}
+w1 <- seq(.1, .2, .01)
+w2 <- 1-w1
+cbind(w1, w1*etExp + w2*csExp)
+```
+
+
+
+**(10 pts) Calcula la contribución de cada activo en la varianza total de la cartera utilizando el valor encontrado en el inciso 2.
+
+(10 pts) Calcula los coeficientes beta1 y beta2 .**
+```{r}
+# Asignamos los pesos encontrados en el inciso 2
+w1 <- .02 
+w2 <- 1-w1
+
+# Calculamos los retornos diarios del portafolio para calcular la covarianza con cada activo
+portReturns <- w1*dfReturns$ETH + w2*dfReturns$CSCO
+portVar <- var(portReturns)
+  
+contrEt <- w1 * cov(dfReturns$ETH, portReturns)
+contrCs <- w2 * cov(dfReturns$CSCO, portReturns)
+
+# Verificando contribuciones y si es correcto las imprimo
+if(portVar == contrEt + contrCs) {
+  sprintf("Los valores obtenidos para las contribuciones: contr1=%s, contr2=%s", round(contrEt, 2), round(contrCs, 2))
+}
+
+sprintf("El porcentaje de contribución de cada activo a la volatilidad del portafolio es: contr1=%s, contr2=%s", round(100 * contrEt / portVar, 2), round(100 * contrCs / portVar, 2))
+
+# Puede aplicarse la fórmula directamente o utilizarse las contribuciones calculadas
+betaEt <- contrEt / (w1 * portVar)
+betaCs <- contrCs / (w2 * portVar)
+sprintf("Los valores obtenidos para las betas: beta1=%s, beta2=%s", round(betaEt, 2), round(betaCs, 2))
+```
+
+
+Se observa una reducción considerable en los valores de contribución para Ethereum, derivado del peso menor que se ha empleado para este portafolio de varianza mínima.
+
